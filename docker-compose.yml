@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env   # must contain real SESSION_SECRET and ENCRYPTION_KEY -- see .env.example
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    volumes:
+      - qe3-data:/app/data   # persists data/db.json across container restarts/redeploys
+    expose:
+      - "4000"
+
+  # Reverse proxy with automatic HTTPS (Let's Encrypt). Point your domain's DNS at this
+  # server, set DOMAIN below, and Caddy handles the certificate entirely on its own.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  qe3-data:
+  caddy-data:
+  caddy-config:

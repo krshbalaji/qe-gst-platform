@@ -1,0 +1,120 @@
+<%- include('../partials/head', { title: invoice.invoiceNo }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <div class="actions no-print">
+    <a class="btn secondary" href="/invoices">← Back to register</a>
+    <button class="btn secondary" id="printBtn">🖨 Print / Save as PDF</button>
+    <% if (invoice.status !== 'cancelled' && invoice.type === 'tax_invoice') { %>
+      <a class="btn secondary" href="/invoices/new?against=<%= invoice.id %>">↩ Issue Credit Note against this invoice</a>
+    <% } %>
+    <% if (einvoiceApplicable && invoice.type !== 'bill_of_supply' && invoice.status !== 'cancelled') { %>
+      <% if (!invoice.einvoice) { %>
+        <form method="POST" action="/invoices/<%= invoice.id %>/einvoice" style="display:inline">
+          <%- include('../partials/csrf') %>
+          <button class="btn" type="submit">Generate e-Invoice (mock IRN)</button>
+        </form>
+      <% } else if (!invoice.einvoice.cancelled) { %>
+        <form method="POST" action="/invoices/<%= invoice.id %>/einvoice/cancel" style="display:inline" id="cancelIrnForm">
+          <%- include('../partials/csrf') %>
+          <button class="btn danger" type="submit">Cancel IRN</button>
+        </form>
+      <% } %>
+    <% } %>
+    <% if (invoice.status !== 'cancelled') { %>
+      <form method="POST" action="/invoices/<%= invoice.id %>/cancel" style="display:inline" id="cancelInvoiceForm">
+        <%- include('../partials/csrf') %>
+        <input type="hidden" name="reason" id="cancelReasonInput">
+        <button class="btn danger" type="submit">Cancel this document</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (invoice.status === 'cancelled') { %>
+    <div class="banner danger no-print">This document is <strong>cancelled</strong><% if (invoice.cancelReason) { %> — reason: <%= invoice.cancelReason %><% } %> and is excluded from GSTR-1, GSTR-3B and dashboard totals.</div>
+  <% } %>
+  <% if (einvoiceApplicable && !invoice.einvoice && invoice.type !== 'bill_of_supply' && invoice.status !== 'cancelled') { %>
+    <div class="banner warn no-print">This company's AATO is at/above ₹5 crore — e-invoice generation is applicable for this B2B tax invoice.</div>
+  <% } %>
+  <% if (invoice.lineItems.some(li => li.hsnSac && li.hsnSac.length < hsnRequired)) { %>
+    <div class="banner danger no-print">⚠ One or more line items has fewer than <%= hsnRequired %> HSN/SAC digits, which is the minimum required at this turnover level.</div>
+  <% } %>
+
+  <div class="invoice-doc">
+    <div class="doc-header">
+      <div>
+        <h1><%= company.tradeName %></h1>
+        <div><%= company.legalName %></div>
+        <div><%= gstin.gstin %> · <%= nameForCode(gstin.stateCode) %></div>
+        <div><%= company.address %></div>
+      </div>
+      <div style="text-align:right">
+        <h2 style="margin:0"><%= invoice.type === 'tax_invoice' ? 'TAX INVOICE' : invoice.type === 'bill_of_supply' ? 'BILL OF SUPPLY' : invoice.type === 'credit_note' ? 'CREDIT NOTE' : 'DEBIT NOTE' %></h2>
+        <div>No: <strong><%= invoice.invoiceNo %></strong></div>
+        <div>Date: <%= invoice.date %></div>
+        <% if (invoice.reverseCharge) { %><div class="badge warn" style="margin-top:6px">Reverse Charge Applicable</div><% } %>
+        <% if (invoice.status === 'cancelled') { %><div class="badge danger" style="margin-top:6px">CANCELLED</div><% } %>
+      </div>
+    </div>
+
+    <div class="party-blocks">
+      <div>
+        <h3>Bill To</h3>
+        <div><strong><%= party ? party.name : 'Unregistered Customer' %></strong></div>
+        <div><%= party ? party.address : '' %></div>
+        <div>GSTIN: <%= party && party.gstin ? party.gstin : 'Unregistered' %></div>
+        <div>State: <%= nameForCode(invoice.placeOfSupplyStateCode) %></div>
+      </div>
+      <div>
+        <h3>Supply details</h3>
+        <div>Place of Supply: <%= nameForCode(invoice.placeOfSupplyStateCode) %> (<%= invoice.placeOfSupplyStateCode %>)</div>
+        <div>Supply type: <%= invoice.interState ? 'Inter-state (IGST)' : 'Intra-state (CGST+SGST)' %></div>
+      </div>
+      <% if (invoice.einvoice) { %>
+      <div class="qr-block">
+        <h3>e-Invoice</h3>
+        <img src="<%= invoice.einvoice.qrDataUrl %>" alt="IRN QR">
+        <div style="font-size:10px;word-break:break-all"><%= invoice.einvoice.irn %></div>
+        <% if (invoice.einvoice.cancelled) { %><span class="badge danger">IRN Cancelled</span><% } else { %><span class="badge ok">IRN Generated</span><% } %>
+      </div>
+      <% } %>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Description</th><th>HSN/SAC</th><th>Unit</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">IGST</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody>
+          <% invoice.lineItems.forEach((li, i) => { %>
+            <tr>
+              <td><%= i+1 %></td><td><%= li.description %></td><td><%= li.hsnSac %></td><td><%= li.unit %></td>
+              <td class="num"><%= li.qty %></td><td class="num">₹<%= li.rate %></td>
+              <td class="num">₹<%= li.taxableValue.toLocaleString('en-IN') %></td>
+              <td class="num"><%= li.cgst ? '₹'+li.cgst.toLocaleString('en-IN')+' ('+li.cgstRate+'%)' : '—' %></td>
+              <td class="num"><%= li.sgst ? '₹'+li.sgst.toLocaleString('en-IN')+' ('+li.sgstRate+'%)' : '—' %></td>
+              <td class="num"><%= li.igst ? '₹'+li.igst.toLocaleString('en-IN')+' ('+li.igstRate+'%)' : '—' %></td>
+              <td class="num">₹<%= li.total.toLocaleString('en-IN') %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="6">Total</td>
+            <td class="num">₹<%= invoice.totals.taxableValue.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= invoice.totals.cgst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= invoice.totals.sgst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= invoice.totals.igst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= invoice.totals.total.toLocaleString('en-IN') %></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div style="margin-top:20px;font-size:12px;color:#6b7280">
+      <strong>Bank details:</strong> <%= company.bankDetails %><br>
+      <% if (invoice.type === 'bill_of_supply') { %>Composition/exempt supply — tax not separately charged on this document.<% } %>
+    </div>
+  </div>
+</div>
+<script src="/js/invoiceView.js"></script>
+<%- include('../partials/foot') %>

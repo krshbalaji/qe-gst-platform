@@ -1,0 +1,27 @@
+<%- include('../partials/head', { title: 'Edit ' + party.name }) %>
+<%- include('../partials/nav') %>
+<div class="container narrow">
+  <h1>Edit <%= party.type %></h1>
+  <div class="card">
+    <form method="POST" action="/masters/parties/<%= party.id %>">
+      <%- include('../partials/csrf') %>
+      <label>Name</label>
+      <input class="editable" name="name" value="<%= party.name %>" required>
+      <label>GSTIN (leave blank if unregistered)</label>
+      <input class="editable" name="gstin" id="partyGstin" maxlength="15" value="<%= party.gstin %>">
+      <label>Address</label>
+      <textarea class="editable" name="address" rows="2"><%= party.address %></textarea>
+      <label>State</label>
+      <select class="editable" name="stateCode" id="partyState">
+        <% STATE_CODES.forEach(s => { %><option value="<%= s.code %>" <%= party.stateCode === s.code ? 'selected' : '' %>><%= s.code %> — <%= s.name %></option><% }) %>
+      </select>
+      <div class="checkbox-row"><input type="checkbox" name="isRegistered" id="isRegistered" <%= party.isRegistered ? 'checked' : '' %>><label for="isRegistered" style="margin:0">Registered under GST</label></div>
+      <div class="actions">
+        <button class="btn" type="submit">Save changes</button>
+        <a class="btn secondary" href="/masters/parties?type=<%= party.type %>">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/js/partyAutofill.js"></script>
+<%- include('../partials/foot') %>

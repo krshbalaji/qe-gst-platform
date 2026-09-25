@@ -1,0 +1,127 @@
+<%- include('../partials/head', { title: 'New Invoice' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>New Invoice</h1>
+  <p class="subtitle">Choose a GST rate preset per line — CGST/SGST vs IGST split and totals recalculate automatically based on supplier vs place-of-supply state.</p>
+  <% if (prefill) { %><div class="banner info">Prefilled as a credit note against invoice <strong><%= prefill.sourceInvoiceNo %></strong> — adjust quantities for a partial credit, or remove lines, before saving.</div><% } %>
+  <div id="prefillData" style="display:none" data-prefill-b64="<%= prefill ? Buffer.from(JSON.stringify(prefill)).toString('base64') : '' %>"></div>
+
+  <form method="POST" action="/invoices" id="invoiceForm">
+      <%- include('../partials/csrf') %>
+    <div class="card">
+      <div class="grid cols-4">
+        <div>
+          <label>GSTIN (supplier)</label>
+          <select class="editable" name="gstinId" id="gstinId" required>
+            <% gstins.forEach(g => { %><option value="<%= g.id %>" data-state="<%= g.stateCode %>" data-scheme="<%= g.scheme %>"><%= g.gstin %></option><% }) %>
+          </select>
+        </div>
+        <div>
+          <label>Document type</label>
+          <select class="editable" name="type" id="docType">
+            <option value="tax_invoice">Tax Invoice</option>
+            <option value="bill_of_supply">Bill of Supply</option>
+            <option value="credit_note">Credit Note</option>
+            <option value="debit_note">Debit Note</option>
+          </select>
+        </div>
+        <div>
+          <label>Date</label>
+          <input class="editable" type="date" name="date" value="<%= today %>" required>
+        </div>
+        <div class="checkbox-row" style="margin-top:30px">
+          <input type="checkbox" name="reverseCharge" id="reverseCharge"><label for="reverseCharge" style="margin:0">Reverse charge applicable</label>
+        </div>
+      </div>
+
+      <div class="grid cols-3">
+        <div>
+          <label>Customer</label>
+          <select class="editable" name="partyId" id="partyId" required></select>
+        </div>
+        <div>
+          <label>Place of supply (state)</label>
+          <select class="editable" name="placeOfSupplyStateCode" id="placeOfSupplyStateCode">
+            <% STATE_CODES.forEach(s => { %><option value="<%= s.code %>"><%= s.code %> — <%= s.name %></option><% }) %>
+          </select>
+        </div>
+        <div>
+          <label>Supply type (auto-detected)</label>
+          <input class="calc" id="supplyTypeDisplay" readonly value="—">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Line items</h3>
+      <div class="table-wrap">
+        <table class="line-items-table">
+          <thead>
+            <tr>
+              <th style="width:16%">Item</th>
+              <th style="width:16%">Description</th>
+              <th>HSN/SAC</th>
+              <th>Unit</th>
+              <th class="num">Qty</th>
+              <th class="num">Rate</th>
+              <th style="width:14%">GST Preset</th>
+              <th class="num">Taxable</th>
+              <th class="num">CGST</th>
+              <th class="num">SGST</th>
+              <th class="num">IGST</th>
+              <th class="num">Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="lineItemsBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="7">Totals</td>
+              <td class="num calc" id="totTaxable">0.00</td>
+              <td class="num calc" id="totCgst">0.00</td>
+              <td class="num calc" id="totSgst">0.00</td>
+              <td class="num calc" id="totIgst">0.00</td>
+              <td class="num calc" id="totTotal">0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="actions"><button type="button" class="btn secondary small" id="addLineBtn">+ Add line</button></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Save Invoice</button>
+      <a class="btn secondary" href="/invoices">Cancel</a>
+    </div>
+  </form>
+</div>
+
+<template id="lineRowTemplate">
+  <tr class="line-row">
+    <td>
+      <select class="product-select"></select>
+    </td>
+    <td><input class="description-input" name="description[]"></td>
+    <td><input class="hsn-input" name="hsnSac[]"></td>
+    <td>
+      <select class="unit-input" name="unit[]">
+        <option>PCS</option><option>NOS</option><option>KG</option><option>MTR</option><option>SET</option><option>BOX</option><option>SVC</option><option>HRS</option>
+      </select>
+    </td>
+    <td><input class="qty-input editable" type="number" step="0.01" name="qty[]" value="1" style="width:70px"></td>
+    <td><input class="rate-input" type="number" step="0.01" name="rate[]" style="width:90px"></td>
+    <td>
+      <select class="preset-select" name="presetId[]"></select>
+    </td>
+    <td class="num calc taxable-out">0.00</td>
+    <td class="num calc cgst-out">0.00</td>
+    <td class="num calc sgst-out">0.00</td>
+    <td class="num calc igst-out">0.00</td>
+    <td class="num calc total-out">0.00</td>
+    <td><button type="button" class="linkbtn remove-line">✕</button></td>
+  </tr>
+</template>
+
+<script src="/js/invoiceForm.js"></script>
+<%- include('../partials/foot') %>

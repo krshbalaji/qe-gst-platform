@@ -1,0 +1,78 @@
+<%- include('../partials/head', { title: 'Reconciliation' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Reconciliation</h1>
+
+  <div class="filter-bar">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div><label>Period</label><input type="month" name="period" value="<%= period %>"></div>
+      <div><button class="btn secondary" type="submit">Load</button></div>
+    </form>
+  </div>
+
+  <h2>GSTR-1 vs E-Invoice (IRP)</h2>
+  <p class="subtitle">Checks that every B2B tax invoice/note has a corresponding, non-cancelled IRN — computed live from this system's own invoice + e-invoice records.</p>
+  <div class="grid cols-3">
+    <div class="card">
+      <h3>✅ Matched (<%= einvoiceRecon.matched.length %>)</h3>
+      <table><% einvoiceRecon.matched.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!einvoiceRecon.matched.length) { %><tr><td>None</td></tr><% } %></table>
+    </div>
+    <div class="card">
+      <h3>⚠ Missing IRN (<%= einvoiceRecon.missingIrn.length %>)</h3>
+      <table><% einvoiceRecon.missingIrn.forEach(r => { %><tr><td><a href="/invoices/<%= r.id %>"><%= r.invoiceNo %></a></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!einvoiceRecon.missingIrn.length) { %><tr><td>None</td></tr><% } %></table>
+    </div>
+    <div class="card">
+      <h3>❌ Cancelled IRN (<%= einvoiceRecon.cancelledIrn.length %>)</h3>
+      <table><% einvoiceRecon.cancelledIrn.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!einvoiceRecon.cancelledIrn.length) { %><tr><td>None</td></tr><% } %></table>
+    </div>
+  </div>
+
+  <h2>GSTR-2B vs Purchase Register</h2>
+  <p class="subtitle">Real GSTN GSTR-2B integration is out of scope for v1 (see README). This uses a mock GSTR-2B feed generated from your own Purchase Register, with a few deliberate discrepancies, so you can see the reconciliation logic in action.</p>
+  <form method="POST" action="/reconciliation/generate-2b" style="margin-bottom:16px">
+      <%- include('../partials/csrf') %>
+    <input type="hidden" name="period" value="<%= period %>">
+    <button class="btn secondary" type="submit">🔄 (Re)generate mock GSTR-2B for <%= period %></button>
+  </form>
+
+  <% if (!purchaseRecon.hasGstr2b) { %>
+    <div class="banner info">No mock GSTR-2B loaded for this period yet — click the button above.</div>
+  <% } else { %>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>✅ Matched (<%= purchaseRecon.matched.length %>)</h3>
+      <table><thead><tr><th>Invoice #</th><th>Vendor</th><th class="num">Value</th></tr></thead><tbody>
+        <% purchaseRecon.matched.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td><%= r.vendor %></td><td class="num">₹<%= r.value.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!purchaseRecon.matched.length) { %><tr><td colspan="3">None</td></tr><% } %>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <h3>⚠ Value mismatch (<%= purchaseRecon.valueMismatch.length %>)</h3>
+      <table><thead><tr><th>Invoice #</th><th>Vendor</th><th class="num">Purchase reg.</th><th class="num">GSTR-2B</th></tr></thead><tbody>
+        <% purchaseRecon.valueMismatch.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td><%= r.vendor %></td><td class="num">₹<%= r.purchaseRegisterValue.toLocaleString('en-IN') %></td><td class="num">₹<%= r.gstr2bValue.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!purchaseRecon.valueMismatch.length) { %><tr><td colspan="4">None</td></tr><% } %>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <h3>❌ Missing in Purchase Register (<%= purchaseRecon.missingInPurchaseRegister.length %>)</h3>
+      <p class="subtitle" style="margin-top:-6px">In GSTR-2B but not booked — ITC risk if claimed without a matching purchase entry.</p>
+      <table><thead><tr><th>Invoice #</th><th>Vendor</th><th class="num">Value</th></tr></thead><tbody>
+        <% purchaseRecon.missingInPurchaseRegister.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td><%= r.vendorName %></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!purchaseRecon.missingInPurchaseRegister.length) { %><tr><td colspan="3">None</td></tr><% } %>
+      </tbody></table>
+    </div>
+    <div class="card">
+      <h3>❌ Missing in GSTR-2B (<%= purchaseRecon.missingInGstr2b.length %>)</h3>
+      <p class="subtitle" style="margin-top:-6px">Booked in your Purchase Register but vendor hasn't reported it yet.</p>
+      <table><thead><tr><th>Invoice #</th><th class="num">Value</th></tr></thead><tbody>
+        <% purchaseRecon.missingInGstr2b.forEach(r => { %><tr><td><%= r.invoiceNo %></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr><% }) %>
+        <% if (!purchaseRecon.missingInGstr2b.length) { %><tr><td colspan="2">None</td></tr><% } %>
+      </tbody></table>
+    </div>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

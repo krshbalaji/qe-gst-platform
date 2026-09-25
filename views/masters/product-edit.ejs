@@ -1,0 +1,29 @@
+<%- include('../partials/head', { title: 'Edit ' + product.description }) %>
+<%- include('../partials/nav') %>
+<div class="container narrow">
+  <h1>Edit item</h1>
+  <div class="card">
+    <form method="POST" action="/masters/products/<%= product.id %>">
+      <%- include('../partials/csrf') %>
+      <label>Description</label>
+      <input class="editable" name="description" value="<%= product.description %>" required>
+      <label>HSN / SAC code</label>
+      <input class="editable" name="hsnSac" value="<%= product.hsnSac %>" required>
+      <label>Unit (UQC)</label>
+      <select class="editable" name="unit">
+        <% ['PCS','NOS','KG','MTR','SET','BOX','SVC','HRS'].forEach(u => { %><option <%= product.unit === u ? 'selected' : '' %>><%= u %></option><% }) %>
+      </select>
+      <label>Default rate (₹)</label>
+      <input class="editable" type="number" step="0.01" min="0" name="rate" value="<%= product.rate %>" required>
+      <label>Default GST rate preset</label>
+      <select class="editable" name="defaultPresetLabel">
+        <% presets.forEach(p => { %><option <%= product.defaultPresetLabel === p.label ? 'selected' : '' %>><%= p.label %></option><% }) %>
+      </select>
+      <div class="actions">
+        <button class="btn" type="submit">Save changes</button>
+        <a class="btn secondary" href="/masters/products">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../partials/foot') %>

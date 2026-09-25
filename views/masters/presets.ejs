@@ -1,0 +1,47 @@
+<%- include('../partials/head', { title: 'GST Rate Presets' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>GST Rate Presets</h1>
+  <p class="subtitle">Selecting a preset on an invoice line auto-sets scheme + CGST/SGST/IGST split (based on inter- vs intra-state) and recalculates totals instantly.</p>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3><%= presets.length %> preset(s)</h3>
+      <table class="card-table">
+        <thead><tr><th>Label</th><th>Scheme</th><th class="num">Rate</th><th>How it applies</th></tr></thead>
+        <tbody>
+          <% presets.forEach(p => { %>
+            <tr>
+              <td><%= p.label %></td>
+              <td><span class="badge muted"><%= p.scheme %></span></td>
+              <td class="num"><%= p.rate %>%</td>
+              <td>
+                <% if (p.scheme === 'regular') { %>Inter-state → IGST <%= p.rate %>%; Intra-state → CGST <%= p.rate/2 %>% + SGST <%= p.rate/2 %>%<% }
+                   else if (p.scheme === 'composition') { %>No tax on invoice (Bill of Supply); <%= p.rate %>% is the dealer's own composition liability<% }
+                   else { %>No tax charged (exempt / nil-rated)<% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Add a custom preset</h3>
+      <form method="POST" action="/masters/presets">
+      <%- include('../partials/csrf') %>
+        <label>Label</label>
+        <input class="editable" name="label" placeholder="e.g. Regular 3% (gold)" required>
+        <label>Scheme</label>
+        <select class="editable" name="scheme">
+          <option value="regular">Regular</option>
+          <option value="composition">Composition</option>
+          <option value="exempt">Exempt / Nil</option>
+        </select>
+        <label>Rate (%)</label>
+        <input class="editable" type="number" step="0.01" name="rate" required>
+        <div class="actions"><button class="btn" type="submit">Add preset</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

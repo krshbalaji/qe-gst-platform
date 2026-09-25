@@ -1,0 +1,18 @@
+<%- include('../partials/head', { title: 'Audit Log' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Audit Log</h1>
+  <p class="subtitle">Who did what, when — most recent first. Kept for the last 5,000 actions across the whole system before older entries roll off (see README for shipping this to a real log store).</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody>
+        <% entries.forEach(e => { %>
+          <tr><td><%= e.at %></td><td><%= e.userName %></td><td><%= e.action %></td><td><%= e.detail %></td></tr>
+        <% }) %>
+        <% if (!entries.length) { %><tr><td colspan="4">No activity recorded yet.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/foot') %>

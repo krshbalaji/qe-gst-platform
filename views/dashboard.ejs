@@ -1,0 +1,68 @@
+<%- include('partials/head', { title: 'Dashboard' }) %>
+<%- include('partials/nav') %>
+<div class="container">
+  <h1><%= company.tradeName %></h1>
+  <p class="subtitle"><%= company.legalName %> · PAN <%= company.pan %> · <%= gstins.length %> GSTIN(s) registered · Period <%= period %></p>
+
+  <% if (einvoiceRequired) { %>
+    <div class="banner warn">
+      ⚠ Estimated Aggregate Annual Turnover (AATO) is ₹<%= aato.toLocaleString('en-IN') %> — at/above the ₹5 crore e-invoicing threshold.
+      E-invoice (IRN) generation is applicable for B2B tax invoices.
+      <% if (thirtyDayWindow) { %> The 30-day IRN reporting window also applies (AATO ≥ ₹10 crore).<% } %>
+    </div>
+  <% } else { %>
+    <div class="banner info">AATO so far: ₹<%= aato.toLocaleString('en-IN') %> — below the ₹5 crore e-invoicing threshold. E-invoicing is optional.</div>
+  <% } %>
+
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Invoices this period</div><div class="value"><%= monthInvoiceCount %></div><div class="hint"><a href="/invoices">View invoice register →</a></div></div>
+    <div class="kpi"><div class="label">Outward taxable value</div><div class="value">₹<%= taxLiability.taxableValue.toLocaleString('en-IN') %></div></div>
+    <div class="kpi"><div class="label">ITC available (this period)</div><div class="value">₹<%= itcAvailableTotal.toLocaleString('en-IN') %></div></div>
+    <div class="kpi"><div class="label">Net payable in cash (after set-off)</div><div class="value">₹<%= netPayableTotal.toLocaleString('en-IN') %></div><div class="hint"><%= filedForPeriod ? 'GSTR-3B saved for this period' : 'Not yet filed — see GSTR-3B' %></div></div>
+  </div>
+
+  <div class="grid cols-2" style="margin-top:8px">
+    <div class="card">
+      <h3>Compliance calendar</h3>
+      <table>
+        <% dueDates.forEach(d => { %>
+          <tr><td><%= d.label %></td><td class="num"><strong>Due: <%= d.due %></strong></td></tr>
+        <% }) %>
+      </table>
+      <div class="actions">
+        <a class="btn secondary small" href="/gstr1?period=<%= period %>">Prepare GSTR-1</a>
+        <a class="btn secondary small" href="/gstr3b?period=<%= period %>">Prepare GSTR-3B</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Registered GSTINs</h3>
+      <table>
+        <% gstins.forEach(g => { %>
+          <tr><td><%= g.gstin %></td><td><%= nameForCode(g.stateCode) %></td><td><span class="badge muted"><%= g.scheme %></span></td></tr>
+        <% }) %>
+      </table>
+      <div class="actions"><a class="btn secondary small" href="/gstins/new">+ Add GSTIN</a></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Simulate opening / prior-FY turnover (for AATO &amp; e-invoicing threshold demo)</h3>
+    <form method="POST" action="/company/aato" style="max-width:320px">
+      <%- include('partials/csrf') %>
+      <label>Prior-FY / opening AATO (₹)</label>
+      <input class="editable" type="number" step="1" name="priorFyAato" value="<%= company.priorFyAato || 0 %>">
+      <div class="actions"><button class="btn small" type="submit">Update</button></div>
+    </form>
+  </div>
+
+  <div class="grid cols-3">
+    <div class="card"><h3>Quick actions</h3>
+      <div class="actions" style="flex-direction:column;align-items:stretch">
+        <a class="btn" href="/invoices/new">+ New Invoice</a>
+        <a class="btn secondary" href="/masters/parties?type=customer">+ Add Customer</a>
+        <a class="btn secondary" href="/masters/products">+ Add Product / Service</a>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('partials/foot') %>

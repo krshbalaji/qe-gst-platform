@@ -1,0 +1,24 @@
+<%- include('../partials/head', { title: 'Register your business' }) %>
+<div class="login-wrap">
+  <div class="card login-card" style="width:440px">
+    <h1>Register your business</h1>
+    <p class="subtitle">Creates a new, fully separate company workspace. You'll be the Owner.</p>
+    <% if (error) { %><div class="banner danger"><%= error %></div><% } %>
+    <form method="POST" action="/signup">
+      <%- include('../partials/csrf') %>
+      <label>Business / trade name</label>
+      <input class="editable" name="tradeName" required autofocus>
+      <label>Legal name (as per GST registration)</label>
+      <input class="editable" name="legalName" required>
+      <label>Your name</label>
+      <input class="editable" name="ownerName" required>
+      <label>Email (used to log in)</label>
+      <input class="editable" type="email" name="email" required>
+      <label>Password (at least 8 characters)</label>
+      <input class="editable" type="password" name="password" minlength="8" required>
+      <div class="actions"><button class="btn" type="submit" style="width:100%">Create workspace</button></div>
+    </form>
+    <p style="text-align:center;font-size:13px;margin-top:14px"><a href="/login">Already have an account? Log in</a></p>
+  </div>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,10 @@
+<%- include('../partials/head', { title: 'Backup' }) %>
+<%- include('../partials/nav') %>
+<div class="container narrow">
+  <h1>Backup</h1>
+  <p class="subtitle">Storage is a single JSON file (see README) — download a copy regularly. This contains everything: invoices, masters, and user credential hashes (not plaintext passwords), so keep the file itself secure.</p>
+  <div class="card">
+    <a class="btn" href="/settings/backup/download">⬇ Download full backup (JSON)</a>
+  </div>
+</div>
+<%- include('../partials/foot') %>

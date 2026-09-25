@@ -1,0 +1,26 @@
+<%- include('../partials/head', { title: 'Add GSTIN' }) %>
+<%- include('../partials/nav') %>
+<div class="container narrow">
+  <h1>Add a GSTIN</h1>
+  <p class="subtitle">Each GSTIN represents one state registration under this PAN.</p>
+  <div class="card">
+    <% if (error) { %><div class="banner danger"><%= error %></div><% } %>
+    <form method="POST" action="/gstins">
+      <%- include('../partials/csrf') %>
+      <label>GSTIN (15 characters)</label>
+      <input class="editable" id="gstinInput" name="gstin" maxlength="15" placeholder="e.g. 33AAACA1234A1Z5" required>
+      <label>State (auto-derived from GSTIN prefix, override if needed)</label>
+      <select class="editable" name="stateCode" id="stateCode">
+        <% STATE_CODES.forEach(s => { %><option value="<%= s.code %>"><%= s.code %> — <%= s.name %></option><% }) %>
+      </select>
+      <label>Taxation scheme</label>
+      <select class="editable" name="scheme">
+        <option value="regular">Regular</option>
+        <option value="composition">Composition</option>
+      </select>
+      <div class="actions"><button class="btn" type="submit">Add GSTIN</button><a class="btn secondary" href="/companies">Cancel</a></div>
+    </form>
+  </div>
+</div>
+<script src="/js/gstinAutofill.js"></script>
+<%- include('../partials/foot') %>

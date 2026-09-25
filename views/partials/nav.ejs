@@ -1,0 +1,39 @@
+<% const safePath = typeof path !== 'undefined' ? path : ''; %>
+<% if (currentUser) { %>
+<header class="topbar no-print">
+  <div class="brand">QE3 <span>GST &amp; Tax Compliance</span></div>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">☰</button>
+  <nav id="navLinks">
+    <a href="/" class="<%= safePath === '/' ? 'active' : '' %>">Dashboard</a>
+    <a href="/invoices" class="<%= safePath.startsWith('/invoices') ? 'active' : '' %>">Invoices</a>
+    <div class="dropdown">
+      <a href="/masters/parties" class="<%= safePath.startsWith('/masters') ? 'active' : '' %>">Masters ▾</a>
+      <div class="dropdown-menu">
+        <a href="/masters/parties?type=customer">Customers</a>
+        <a href="/masters/parties?type=vendor">Vendors</a>
+        <a href="/masters/products">Products / Services</a>
+        <a href="/masters/presets">GST Rate Presets</a>
+        <a href="/masters/purchases">Purchase Register</a>
+      </div>
+    </div>
+    <a href="/gstr1" class="<%= safePath.startsWith('/gstr1') ? 'active' : '' %>">GSTR-1</a>
+    <a href="/gstr3b" class="<%= safePath.startsWith('/gstr3b') ? 'active' : '' %>">GSTR-3B</a>
+    <a href="/reconciliation" class="<%= safePath.startsWith('/reconciliation') ? 'active' : '' %>">Reconciliation</a>
+    <a href="/reports/party-wise" class="<%= safePath.startsWith('/reports') ? 'active' : '' %>">Reports</a>
+    <a href="/companies" class="<%= safePath.startsWith('/companies') || safePath.startsWith('/gstins') ? 'active' : '' %>">Company</a>
+    <% if (currentUser.role === 'owner') { %>
+      <a href="/users" class="<%= safePath.startsWith('/users') ? 'active' : '' %>">Users</a>
+      <a href="/audit" class="<%= safePath.startsWith('/audit') ? 'active' : '' %>">Audit Log</a>
+      <a href="/settings/backup" class="<%= safePath.startsWith('/settings') ? 'active' : '' %>">Backup</a>
+    <% } %>
+  </nav>
+  <div class="userbox">
+    <span class="role-badge role-<%= currentUser.role %>"><%= currentUser.role %></span>
+    <span><%= currentUser.name %></span>
+    <form method="POST" action="/logout" style="display:inline">
+      <%- include('csrf') %><button class="linkbtn" type="submit">Log out</button>
+    </form>
+  </div>
+</header>
+<script src="/js/nav.js"></script>
+<% } %>

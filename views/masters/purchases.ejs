@@ -1,0 +1,51 @@
+<%- include('../partials/head', { title: 'Purchase Register' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Purchase Register</h1>
+  <p class="subtitle">Feeds ITC-available totals on the dashboard/GSTR-3B and the GSTR-2B reconciliation.</p>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Add purchase invoice</h3>
+      <form method="POST" action="/masters/purchases">
+      <%- include('../partials/csrf') %>
+        <label>Vendor</label>
+        <select class="editable" name="vendorId" required>
+          <% vendors.forEach(v => { %><option value="<%= v.id %>"><%= v.name %> (<%= v.gstin || 'unregistered' %>)</option><% }) %>
+        </select>
+        <label>Vendor invoice number</label>
+        <input class="editable" name="invoiceNo" required>
+        <label>Date</label>
+        <input class="editable" type="date" name="date" required>
+        <label>Taxable value (₹)</label>
+        <input class="editable" type="number" step="0.01" name="taxableValue" required>
+        <label>GST rate (%)</label>
+        <input class="editable" type="number" step="0.01" name="rate" value="18">
+        <div class="checkbox-row"><input type="checkbox" name="interState" id="interState"><label for="interState" style="margin:0">Inter-state purchase (IGST)</label></div>
+        <div class="checkbox-row"><input type="checkbox" name="itcEligible" id="itcEligible" checked><label for="itcEligible" style="margin:0">ITC eligible</label></div>
+        <div class="actions"><button class="btn" type="submit">Save</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h3><%= purchases.length %> purchase invoice(s)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Vendor</th><th>Invoice #</th><th>Date</th><th class="num">Taxable</th><th class="num">Tax</th><th class="num">Total</th><th>ITC</th></tr></thead>
+          <tbody>
+            <% purchases.forEach(p => { %>
+              <tr>
+                <td><%= vendorName(p.vendorId) %></td><td><%= p.invoiceNo %></td><td><%= p.date %></td>
+                <td class="num">₹<%= p.taxableValue.toLocaleString('en-IN') %></td>
+                <td class="num">₹<%= (p.cgst+p.sgst+p.igst).toLocaleString('en-IN') %></td>
+                <td class="num">₹<%= p.total.toLocaleString('en-IN') %></td>
+                <td><% if (p.itcEligible) { %><span class="badge ok">Eligible</span><% } else { %><span class="badge muted">Blocked</span><% } %></td>
+              </tr>
+            <% }) %>
+            <% if (!purchases.length) { %><tr><td colspan="7">None added yet.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

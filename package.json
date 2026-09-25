@@ -1,0 +1,23 @@
+{
+  "name": "qe-gst-platform",
+  "version": "0.2.0",
+  "description": "GST Invoice & Tax Compliance Platform (India)",
+  "main": "server.js",
+  "scripts": {
+    "seed": "node lib/seed.js",
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "compression": "^1.7.4",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "qrcode": "^1.5.3"
+  }
+}

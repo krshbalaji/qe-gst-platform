@@ -1,0 +1,59 @@
+<%- include('../partials/head', { title: 'Invoices' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Invoice Register</h1>
+  <div class="filter-bar">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div><label>Period</label><input type="month" name="period" value="<%= period %>"></div>
+      <div><label>GSTIN</label>
+        <select name="gstinId">
+          <option value="">All GSTINs</option>
+          <% gstins.forEach(g => { %><option value="<%= g.id %>" <%= String(gstinId) === String(g.id) ? 'selected' : '' %>><%= g.gstin %></option><% }) %>
+        </select>
+      </div>
+      <div><button class="btn secondary" type="submit">Filter</button></div>
+    </form>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <a class="btn secondary" href="/invoices/export.csv?period=<%= period %>&gstinId=<%= gstinId %>">⬇ Export CSV</a>
+      <a class="btn" href="/invoices/new">+ New Invoice</a>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Invoice #</th><th>Date</th><th>Type</th><th>Party</th><th>Supply</th><th class="num">Taxable</th><th class="num">Tax</th><th class="num">Total</th><th>e-Invoice</th><th>Status</th></tr></thead>
+      <tbody>
+        <% page.rows.forEach(r => { %>
+          <tr style="<%= r.cancelled ? 'opacity:.5' : '' %>">
+            <td><a href="/invoices/<%= r.id %>"><%= r.invoiceNo %></a></td>
+            <td><%= r.date %></td>
+            <td><%= r.type.replace('_',' ') %></td>
+            <td><%= r.partyName %></td>
+            <td><%= r.interState ? 'Inter-state' : 'Intra-state' %></td>
+            <td class="num">₹<%= r.taxableValue.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= (r.cgst+r.sgst+r.igst).toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= r.total.toLocaleString('en-IN') %></td>
+            <td><% if (r.einvoice) { %><span class="badge ok">Generated</span><% } else { %><span class="badge muted">—</span><% } %></td>
+            <td><% if (r.cancelled) { %><span class="badge danger">Cancelled</span><% } else { %><span class="badge ok">Finalized</span><% } %></td>
+          </tr>
+        <% }) %>
+        <% if (!page.rows.length) { %><tr><td colspan="10">No invoices for this filter.</td></tr><% } %>
+      </tbody>
+      <% if (page.rows.length) { %>
+      <tfoot>
+        <tr><td colspan="5">Page total</td><td class="num">₹<%= totals.taxableValue.toLocaleString('en-IN') %></td><td class="num">₹<%= totals.tax.toLocaleString('en-IN') %></td><td class="num">₹<%= totals.total.toLocaleString('en-IN') %></td><td colspan="2"></td></tr>
+      </tfoot>
+      <% } %>
+    </table>
+  </div>
+
+  <% if (page.totalPages > 1) { %>
+  <div class="actions" style="justify-content:center">
+    <% for (let p = 1; p <= page.totalPages; p++) { %>
+      <a class="btn <%= p === page.page ? '' : 'secondary' %> small" href="?period=<%= period %>&gstinId=<%= gstinId %>&page=<%= p %>"><%= p %></a>
+    <% } %>
+  </div>
+  <p class="subtitle" style="text-align:center">Showing <%= page.rows.length %> of <%= page.total %> invoices</p>
+  <% } %>
+</div>
+<%- include('../partials/foot') %>

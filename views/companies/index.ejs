@@ -1,0 +1,41 @@
+<%- include('../partials/head', { title: 'Company Profile' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Company Profile</h1>
+  <p class="subtitle">Multi-GSTIN support: one PAN can have several GSTINs, one per state of operation.</p>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Business details</h3>
+      <form method="POST" action="/companies/update">
+      <%- include('../partials/csrf') %>
+        <label>Legal name</label>
+        <input class="editable" name="legalName" value="<%= company.legalName %>" required>
+        <label>Trade name</label>
+        <input class="editable" name="tradeName" value="<%= company.tradeName %>">
+        <label>PAN</label>
+        <input class="editable" name="pan" value="<%= company.pan %>" maxlength="10">
+        <label>Registered address</label>
+        <textarea class="editable" name="address" rows="2"><%= company.address %></textarea>
+        <label>Bank details (for invoice footer)</label>
+        <textarea class="editable" name="bankDetails" rows="2"><%= company.bankDetails %></textarea>
+        <div class="actions"><button class="btn" type="submit">Save</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>GSTINs on this PAN</h3>
+      <table class="card-table">
+        <thead><tr><th>GSTIN</th><th>State</th><th>Scheme</th></tr></thead>
+        <tbody>
+          <% gstins.forEach(g => { %>
+            <tr><td><%= g.gstin %></td><td><%= nameForCode(g.stateCode) %> (<%= g.stateCode %>)</td><td><span class="badge muted"><%= g.scheme %></span></td></tr>
+          <% }) %>
+          <% if (!gstins.length) { %><tr><td colspan="3">No GSTINs added yet.</td></tr><% } %>
+        </tbody>
+      </table>
+      <div class="actions"><a class="btn secondary small" href="/gstins/new">+ Add GSTIN</a></div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

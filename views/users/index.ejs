@@ -1,0 +1,56 @@
+<%- include('../partials/head', { title: 'Users' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Users &amp; Roles</h1>
+  <p class="subtitle">Owner and Accountant can create/edit records. CA and Viewer are read-only (e.g. for client/auditor access).</p>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Add a user</h3>
+      <% if (error) { %><div class="banner danger"><%= error %></div><% } %>
+      <form method="POST" action="/users">
+        <%- include('../partials/csrf') %>
+        <label>Name</label>
+        <input class="editable" name="name" required>
+        <label>Email (used to log in)</label>
+        <input class="editable" type="email" name="email" required>
+        <label>Temporary password</label>
+        <input class="editable" type="text" name="password" minlength="6" required>
+        <label>Role</label>
+        <select class="editable" name="role">
+          <option value="accountant">Accountant (read-write)</option>
+          <option value="owner">Owner (read-write, can manage users)</option>
+          <option value="ca">CA / client access (read-only)</option>
+          <option value="viewer">Viewer (read-only)</option>
+        </select>
+        <div class="actions"><button class="btn" type="submit">Create user</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3><%= users.length %> user(s)</h3>
+      <table class="card-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          <% users.forEach(u => { %>
+            <tr style="<%= u.active === false ? 'opacity:.55' : '' %>">
+              <td><%= u.name %></td>
+              <td><%= u.email %></td>
+              <td><span class="role-badge role-<%= u.role %>"><%= u.role %></span></td>
+              <td><% if (u.active === false) { %><span class="badge danger">Deactivated</span><% } else { %><span class="badge ok">Active</span><% } %></td>
+              <td>
+                <% if (u.id !== currentUser.id) { %>
+                <form method="POST" action="/users/<%= u.id %>/toggle-active" style="display:inline">
+                  <%- include('../partials/csrf') %>
+                  <button class="btn <%= u.active === false ? '' : 'danger' %> small" type="submit"><%= u.active === false ? 'Reactivate' : 'Deactivate' %></button>
+                </form>
+                <% } else { %><span style="color:var(--muted);font-size:12px">(you)</span><% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>

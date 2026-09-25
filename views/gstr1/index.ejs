@@ -1,0 +1,96 @@
+<%- include('../partials/head', { title: 'GSTR-1' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>GSTR-1 — Auto-draft</h1>
+  <p class="subtitle">Populated automatically from tax invoices, credit/debit notes and e-invoices for the selected period. Review before export.</p>
+
+  <div class="filter-bar">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div><label>Period</label><input type="month" name="period" value="<%= period %>"></div>
+      <div><label>GSTIN</label>
+        <select name="gstinId">
+          <option value="">All GSTINs</option>
+          <% gstins.forEach(g => { %><option value="<%= g.id %>" <%= String(gstinId) === String(g.id) ? 'selected' : '' %>><%= g.gstin %></option><% }) %>
+        </select>
+      </div>
+      <div><button class="btn secondary" type="submit">Load</button></div>
+    </form>
+    <div style="margin-left:auto"><a class="btn" href="/gstr1/export.json?period=<%= period %>&gstinId=<%= gstinId %>">⬇ Export JSON</a></div>
+  </div>
+
+  <div class="grid cols-4">
+    <div class="kpi"><div class="label">Invoices in period</div><div class="value"><%= draft.invoiceCount %></div></div>
+    <div class="kpi"><div class="label">Net taxable value</div><div class="value">₹<%= draft.totals.taxableValue.toLocaleString('en-IN') %></div></div>
+    <div class="kpi"><div class="label">Net IGST</div><div class="value">₹<%= draft.totals.igst.toLocaleString('en-IN') %></div></div>
+    <div class="kpi"><div class="label">Net CGST + SGST</div><div class="value">₹<%= (draft.totals.cgst+draft.totals.sgst).toLocaleString('en-IN') %></div></div>
+  </div>
+
+  <h2>Table 4A — B2B Invoices (<%= draft.b2b.length %>)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>GSTIN</th><th>Party</th><th>Invoice #</th><th>Date</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Invoice Value</th><th>e-Invoice</th></tr></thead>
+      <tbody>
+        <% draft.b2b.forEach(r => { %>
+          <tr>
+            <td><%= r.partyGstin %></td><td><%= r.partyName %></td><td><%= r.invoiceNo %></td><td><%= r.date %></td>
+            <td class="num"><%= r.rate %>%</td>
+            <td class="num">₹<%= r.taxableValue.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= r.igst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= r.cgst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= r.sgst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= r.invoiceValue.toLocaleString('en-IN') %></td>
+            <td><span class="badge <%= r.einvoiceStatus === 'generated' ? 'ok' : r.einvoiceStatus === 'cancelled' ? 'danger' : 'muted' %>"><%= r.einvoiceStatus %></span></td>
+          </tr>
+        <% }) %>
+        <% if (!draft.b2b.length) { %><tr><td colspan="11">No B2B invoices in this period.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Table 9B — Credit / Debit Notes (Registered) (<%= draft.cdnr.length %>)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Type</th><th>GSTIN</th><th>Party</th><th>Note #</th><th>Date</th><th class="num">Taxable</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th></tr></thead>
+      <tbody>
+        <% draft.cdnr.forEach(r => { %>
+          <tr><td><%= r.noteType %></td><td><%= r.partyGstin %></td><td><%= r.partyName %></td><td><%= r.invoiceNo %></td><td><%= r.date %></td>
+            <td class="num">₹<%= r.taxableValue.toLocaleString('en-IN') %></td><td class="num">₹<%= r.igst.toLocaleString('en-IN') %></td><td class="num">₹<%= r.cgst.toLocaleString('en-IN') %></td><td class="num">₹<%= r.sgst.toLocaleString('en-IN') %></td>
+          </tr>
+        <% }) %>
+        <% if (!draft.cdnr.length) { %><tr><td colspan="9">None in this period.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>B2C (Small) Supplies (<%= draft.b2cs.length %>)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Invoice #</th><th>Date</th><th>Supply state</th><th class="num">Rate</th><th class="num">Taxable</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th></tr></thead>
+      <tbody>
+        <% draft.b2cs.forEach(r => { %>
+          <tr><td><%= r.invoiceNo %></td><td><%= r.date %></td><td><%= nameForCode(r.supplyState) %></td><td class="num"><%= r.rate %>%</td>
+            <td class="num">₹<%= r.taxableValue.toLocaleString('en-IN') %></td><td class="num">₹<%= r.igst.toLocaleString('en-IN') %></td><td class="num">₹<%= r.cgst.toLocaleString('en-IN') %></td><td class="num">₹<%= r.sgst.toLocaleString('en-IN') %></td>
+          </tr>
+        <% }) %>
+        <% if (!draft.b2cs.length) { %><tr><td colspan="8">None in this period.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Table 12 — HSN Summary (<%= draft.hsnSummary.length %>)</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>HSN/SAC</th><th>Description</th><th>UQC</th><th class="num">Qty</th><th class="num">Taxable</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total Value</th></tr></thead>
+      <tbody>
+        <% draft.hsnSummary.forEach(h => { %>
+          <tr><td><%= h.hsnSac %></td><td><%= h.description %></td><td><%= h.unit %></td><td class="num"><%= h.qty %></td>
+            <td class="num">₹<%= h.taxableValue.toLocaleString('en-IN') %></td><td class="num">₹<%= h.igst.toLocaleString('en-IN') %></td><td class="num">₹<%= h.cgst.toLocaleString('en-IN') %></td><td class="num">₹<%= h.sgst.toLocaleString('en-IN') %></td>
+            <td class="num">₹<%= h.totalValue.toLocaleString('en-IN') %></td>
+          </tr>
+        <% }) %>
+        <% if (!draft.hsnSummary.length) { %><tr><td colspan="9">None in this period.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/foot') %>

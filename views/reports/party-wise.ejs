@@ -1,0 +1,36 @@
+<%- include('../partials/head', { title: 'Party-wise Report' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Reports</h1>
+  <div class="tabs">
+    <a href="/invoices" >Sales Register</a>
+    <a href="/reports/party-wise" class="active">Party-wise</a>
+  </div>
+
+  <div class="filter-bar">
+    <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div><label>Period</label><input type="month" name="period" value="<%= period %>"></div>
+      <div><label>GSTIN</label>
+        <select name="gstinId">
+          <option value="">All GSTINs</option>
+          <% gstins.forEach(g => { %><option value="<%= g.id %>" <%= String(gstinId) === String(g.id) ? 'selected' : '' %>><%= g.gstin %></option><% }) %>
+        </select>
+      </div>
+      <div><button class="btn secondary" type="submit">Filter</button></div>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Party</th><th>GSTIN</th><th class="num">Invoices</th><th class="num">Taxable value</th><th class="num">Tax</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        <% rows.forEach(r => { %>
+          <tr><td><%= r.partyName %></td><td><%= r.gstin || '—' %></td><td class="num"><%= r.invoiceCount %></td>
+            <td class="num">₹<%= r.taxableValue.toLocaleString('en-IN') %></td><td class="num">₹<%= r.tax.toLocaleString('en-IN') %></td><td class="num">₹<%= r.total.toLocaleString('en-IN') %></td></tr>
+        <% }) %>
+        <% if (!rows.length) { %><tr><td colspan="6">No data for this filter.</td></tr><% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<%- include('../partials/foot') %>

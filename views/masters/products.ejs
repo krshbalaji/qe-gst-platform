@@ -1,0 +1,61 @@
+<%- include('../partials/head', { title: 'Products & Services' }) %>
+<%- include('../partials/nav') %>
+<div class="container">
+  <h1>Product / Service Catalog</h1>
+  <p class="subtitle">Description, HSN/SAC, unit and rate auto-fill onto invoices when selected from this catalog.</p>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Add item</h3>
+      <form method="POST" action="/masters/products">
+        <%- include('../partials/csrf') %>
+        <label>Description</label>
+        <input class="editable" name="description" required>
+        <label>HSN / SAC code</label>
+        <input class="editable" name="hsnSac" required>
+        <label>Unit (UQC)</label>
+        <select class="editable" name="unit">
+          <option>PCS</option><option>NOS</option><option>KG</option><option>MTR</option><option>SET</option><option>BOX</option><option>SVC</option><option>HRS</option>
+        </select>
+        <label>Default rate (₹)</label>
+        <input class="editable" type="number" step="0.01" min="0" name="rate" required>
+        <label>Default GST rate preset</label>
+        <select class="editable" name="defaultPresetLabel">
+          <% presets.forEach(p => { %><option><%= p.label %></option><% }) %>
+        </select>
+        <div class="actions"><button class="btn" type="submit">Save</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <form method="GET" style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
+        <div style="flex:1"><label>Search by description</label><input name="q" value="<%= q %>" placeholder="Type to filter..."></div>
+        <div class="checkbox-row" style="margin-top:0"><input type="checkbox" name="showInactive" id="showInactive" <%= showInactive ? 'checked' : '' %>><label for="showInactive" style="margin:0">Show inactive</label></div>
+        <button class="btn secondary small" type="submit">Filter</button>
+      </form>
+      <h3><%= products.length %> item(s)</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Description</th><th>HSN/SAC</th><th>Unit</th><th class="num">Rate</th><th>Default preset</th><th></th></tr></thead>
+          <tbody>
+            <% products.forEach(p => { %>
+              <tr style="<%= p.active === false ? 'opacity:.55' : '' %>">
+                <td><%= p.description %><% if (p.active === false) { %> <span class="badge danger">Inactive</span><% } %></td>
+                <td><%= p.hsnSac %></td><td><%= p.unit %></td><td class="num">₹<%= Number(p.rate).toLocaleString('en-IN') %></td><td><%= p.defaultPresetLabel %></td>
+                <td style="white-space:nowrap">
+                  <a class="btn secondary small" href="/masters/products/<%= p.id %>/edit">Edit</a>
+                  <form method="POST" action="/masters/products/<%= p.id %>/toggle-active" style="display:inline">
+                    <%- include('../partials/csrf') %>
+                    <button class="btn <%= p.active === false ? '' : 'danger' %> small" type="submit"><%= p.active === false ? 'Reactivate' : 'Deactivate' %></button>
+                  </form>
+                </td>
+              </tr>
+            <% }) %>
+            <% if (!products.length) { %><tr><td colspan="6">No items found.</td></tr><% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/foot') %>
